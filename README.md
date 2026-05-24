@@ -20,7 +20,7 @@
 
 Или склонируй репозиторий:
 ```bash
-git clone https://github.com/твой-username/shiftflow.git
+git clone https://github.com/cheetos1012/shiftflow.git
 cd shiftflow
 open index.html
 ```
