@@ -23,5 +23,5 @@ https://shiftflowww.netlify.app/
 ```bash
 git clone https://github.com/cheetos1012/shiftflow.git
 cd shiftflow
-open index.html
 ```
+и открой файл
