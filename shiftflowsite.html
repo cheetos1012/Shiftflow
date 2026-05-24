@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShiftFlow — Планировщик задач</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f0f1a;
+            --bg-secondary: #1a1a2e;
+            --card: #16213e;
+            --card-hover: #1a2744;
+            --text: #e8e8f0;
+            --text-secondary: #8b8fa3;
+            --accent: #6c5ce7;
+            --accent-light: #a29bfe;
+            --accent-glow: rgba(108, 92, 231, 0.3);
+            --success: #00d2a0;
+            --danger: #ff6b6b;
+            --border: #2a2a4a;
+            --radius: 16px;
+            --radius-sm: 10px;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            background-image:
+                radial-gradient(ellipse at 20% 20%, rgba(108, 92, 231, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(0, 210, 160, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(108, 92, 231, 0.03) 0%, transparent 70%);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+            margin-top: 10px;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 var(--accent-glow);
+            }
+            50% {
+                box-shadow: 0 0 0 12px transparent;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Логотип и шапка */
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+            position: relative;
+        }
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+        .logo-text {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #e8e8f0 0%, #a29bfe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+        .header .date {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 400;
+            letter-spacing: 0.3px;
+        }
+
+        /* Статистика */
+        .stats-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            flex: 1;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            text-align: center;
+            transition: var(--transition);
+        }
+        .stat-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 16px var(--accent-glow);
+        }
+        .stat-number {
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #e8e8f0, #a29bfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-top: 2px;
+            font-weight: 500;
+        }
+
+        /* Карточка добавления */
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 22px 24px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .card-header .icon {
+            font-size: 1.2rem;
+        }
+        .card-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+            letter-spacing: -0.3px;
+        }
+        .input-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .input-wrapper {
+            flex: 1 1 auto;
+            position: relative;
+            min-width: 140px;
+        }
+        .input-wrapper input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            transition: var(--transition);
+            outline: none;
+        }
+        .input-wrapper input::placeholder {
+            color: #5a5d70;
+        }
+        .input-wrapper input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.1);
+            background: #1e1e36;
+        }
+        .input-wrapper .input-icon {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            pointer-events: none;
+            font-size: 0.9rem;
+        }
+        .btn {
+            padding: 12px 22px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: -0.2px;
+        }
+        .btn-add {
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            color: #fff;
+            box-shadow: 0 4px 16px var(--accent-glow);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(108, 92, 231, 0.5);
+        }
+        .btn-add:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px var(--accent-glow);
+        }
+        .btn-add::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .btn-add:hover::after {
+            opacity: 1;
+        }
+
+        /* Фильтры */
+        .filters {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            background: var(--card);
+            padding: 6px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+        }
+        .filter-btn {
+            flex: 1;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: var(--transition);
+            font-family: 'Inter', sans-serif;
+            letter-spacing: -0.2px;
+        }
+        .filter-btn.active {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 2px 8px var(--accent-glow);
+        }
+        .filter-btn:hover:not(.active) {
+            color: #fff;
+            background: rgba(108, 92, 231, 0.15);
+        }
+
+        /* Секция задач */
+        .section-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin: 18px 0 10px 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .dot-active {
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent-glow);
+        }
+        .dot-done {
+            background: var(--success);
+            box-shadow: 0 0 8px rgba(0, 210, 160, 0.4);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #4a4d60;
+        }
+        .empty-state .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            opacity: 0.6;
+        }
+        .empty-state p {
+            font-size: 0.9rem;
+            font-weight: 400;
+        }
+        .task-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .task-item {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: var(--transition);
+            animation: slideIn 0.3s ease;
+        }
+        .task-item:hover {
+            border-color: #3a3a5c;
+            background: var(--card-hover);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+        .task-item.done {
+            opacity: 0.55;
+            background: #121a2a;
+            border-color: #1e2a3a;
+        }
+        .task-item.done .task-text {
+            text-decoration: line-through;
+            color: #5a5d70;
+        }
+        .check-circle {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid #3a3a5c;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+        }
+        .check-circle:hover {
+            border-color: var(--accent-light);
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+        .task-item.done .check-circle {
+            background: var(--success);
+            border-color: var(--success);
+            box-shadow: 0 0 12px rgba(0, 210, 160, 0.4);
+        }
+        .task-item.done .check-circle::after {
+            content: '✓';
+            color: #fff;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .task-content {
+            flex: 1;
+            min-width: 0;
+        }
+        .task-text {
+            font-weight: 500;
+            word-break: break-word;
+            font-size: 0.95rem;
+            letter-spacing: -0.2px;
+        }
+        .task-time {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            margin-top: 3px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .task-time .time-icon {
+            font-size: 0.7rem;
+        }
+        .task-time.overdue {
+            color: var(--danger);
+        }
+        .btn-delete {
+            background: none;
+            border: none;
+            color: #4a4d60;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 8px;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+        .btn-delete:hover {
+            color: var(--danger);
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        /* Прогресс-бар */
+        .progress-bar-wrapper {
+            margin-bottom: 20px;
+            background: var(--card);
+            border-radius: var(--radius-sm);
+            padding: 16px 18px;
+            border: 1px solid var(--border);
+        }
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.82rem;
+            font-weight: 500;
+        }
+        .progress-header span:last-child {
+            color: var(--accent-light);
+        }
+        .progress-bar {
+            height: 6px;
+            background: var(--bg-secondary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6c5ce7, #00d2a0);
+            border-radius: 3px;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Подвал */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #3a3d50;
+            font-size: 0.78rem;
+            letter-spacing: 0.5px;
+        }
+        .footer span {
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 600;
+        }
+
+        @media (max-width: 480px) {
+            .input-row {
+                flex-direction: column;
+            }
+            .stats-row {
+                flex-direction: row;
+                gap: 8px;
+            }
+            .stat-card {
+                padding: 12px 10px;
+            }
+            .stat-number {
+                font-size: 1.3rem;
+            }
+            .logo-text {
+                font-size: 1.4rem;
+            }
+            .filters {
+                gap: 4px;
+            }
+            .filter-btn {
+                padding: 8px 10px;
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Шапка с логотипом -->
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon">⚡</div>
+                <span class="logo-text">ShiftFlow</span>
+            </div>
+            <div class="date" id="currentDate"></div>
+        </div>
+
+        <!-- Статистика -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-number" id="totalTasks">0</div>
+                <div class="stat-label">Всего</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="activeCountStat">0</div>
+                <div class="stat-label">Активных</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="doneCountStat">0</div>
+                <div class="stat-label">Готово</div>
+            </div>
+        </div>
+
+        <!-- Прогресс -->
+        <div class="progress-bar-wrapper" id="progressSection">
+            <div class="progress-header">
+                <span>Прогресс на сегодня</span>
+                <span id="progressPercent">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Добавление задачи -->
+        <div class="card">
+            <div class="card-header">
+                <span class="icon">✨</span>
+                <h2>Новая задача</h2>
+            </div>
+            <div class="input-row">
+                <div class="input-wrapper">
+                    <input type="text" id="taskInput" placeholder="Что нужно сделать?" maxlength="150" />
+                    <span class="input-icon">📝</span>
+                </div>
+                <div class="input-wrapper">
+                    <input type="datetime-local" id="taskDateTime" />
+                    <span class="input-icon">📅</span>
+                </div>
+                <button class="btn btn-add" onclick="addTask()">
+                    ➕ Добавить
+                </button>
+            </div>
+        </div>
+
+        <!-- Фильтры -->
+        <div class="filters">
+            <button class="filter-btn active" onclick="setFilter('all', this)">📋 Все</button>
+            <button class="filter-btn" onclick="setFilter('active', this)">⚡ Активные</button>
+            <button class="filter-btn" onclick="setFilter('done', this)">✅ Готово</button>
+        </div>
+
+        <!-- Списки задач -->
+        <div id="taskContainer">
+            <div class="section-title">
+                <span class="dot dot-active"></span> Активные задачи
+            </div>
+            <ul class="task-list" id="activeTasks"></ul>
+            <div class="section-title">
+                <span class="dot dot-done"></span> Выполненные
+            </div>
+            <ul class="task-list" id="doneTasks"></ul>
+            <div class="empty-state" id="emptyMsg">
+                <div class="empty-icon">🚀</div>
+                <p>Всё чисто! Добавьте первую задачу в ShiftFlow</p>
+            </div>
+        </div>
+
+        <!-- Подвал -->
+        <div class="footer">
+            <span>ShiftFlow</span> — твой поток задач
+        </div>
+    </div>
+
+    <script>
+        // Загрузка задач
+        let tasks = JSON.parse(localStorage.getItem('shiftflow_tasks')) || [];
+        let currentFilter = 'all';
+
+        // Дата в шапке
+        function updateDate() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('currentDate').textContent =
+                now.toLocaleDateString('ru-RU', options);
+        }
+        updateDate();
+        setInterval(updateDate, 60000);
+
+        // Сохранение
+        function saveTasks() {
+            localStorage.setItem('shiftflow_tasks', JSON.stringify(tasks));
+        }
+
+        // Сортировка
+        function sortTasks(taskArray) {
+            return taskArray.sort((a, b) => {
+                if (!a.dateTime && !b.dateTime) return b.createdAt - a.createdAt;
+                if (!a.dateTime) return 1;
+                if (!b.dateTime) return -1;
+                return new Date(a.dateTime) - new Date(b.dateTime);
+            });
+        }
+
+        // Формат даты
+        function formatDateTime(dateTimeStr) {
+            if (!dateTimeStr) return 'Без срока';
+            const d = new Date(dateTimeStr);
+            const now = new Date();
+            const isToday = d.toDateString() === now.toDateString();
+            const isPast = d < now;
+            const time = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            const date = d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+
+            let label = '';
+            if (isToday) label = 'Сегодня';
+            else {
+                const tomorrow = new Date(now);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                if (d.toDateString() === tomorrow.toDateString()) label = 'Завтра';
+                else label = date;
+            }
+
+            let result = `${label}, ${time}`;
+            return isPast && !isToday ? result : result;
+        }
+
+        function isOverdue(dateTimeStr) {
+            if (!dateTimeStr) return false;
+            return new Date(dateTimeStr) < new Date();
+        }
+
+        // Обновление статистики и прогресса
+        function updateStats() {
+            const activeTasks = tasks.filter(t => !t.done);
+            const doneTasks = tasks.filter(t => t.done);
+            const total = tasks.length;
+            const todayStr = new Date().toDateString();
+            const todayTasks = tasks.filter(t => {
+                if (!t.dateTime) return false;
+                return new Date(t.dateTime).toDateString() === todayStr;
+            });
+            const todayDone = todayTasks.filter(t => t.done).length;
+            const todayProgress = todayTasks.length > 0 ?
+                Math.round((todayDone / todayTasks.length) * 100) :
+                0;
+
+            document.getElementById('totalTasks').textContent = total;
+            document.getElementById('activeCountStat').textContent = activeTasks.length;
+            document.getElementById('doneCountStat').textContent = doneTasks.length;
+            document.getElementById('progressPercent').textContent = todayProgress + '%';
+            document.getElementById('progressFill').style.width = todayProgress + '%';
+
+            document.getElementById('progressSection').style.display =
+                todayTasks.length > 0 ? 'block' : 'none';
+        }
+
+        // Отрисовка
+        function render() {
+            const activeTasks = sortTasks(tasks.filter(t => !t.done));
+            const doneTasks = sortTasks(tasks.filter(t => t.done));
+
+            const activeList = document.getElementById('activeTasks');
+            const doneList = document.getElementById('doneTasks');
+            const emptyMsg = document.getElementById('emptyMsg');
+            const sections = document.querySelectorAll('.section-title');
+
+            activeList.innerHTML = '';
+            doneList.innerHTML = '';
+
+            if (currentFilter === 'all') {
+                activeTasks.forEach(t => activeList.appendChild(createTaskElement(t)));
+                doneTasks.forEach(t => doneList.appendChild(createTaskElement(t)));
+                emptyMsg.style.display = tasks.length === 0 ? 'block' : 'none';
+                sections.forEach(s => s.style.display = 'flex');
+                activeList.style.display = 'flex';
+                doneList.style.display = 'flex';
+            } else if (currentFilter === 'active') {
+                activeTasks.forEach(t => activeList.appendChild(createTaskElement(t)));
+                emptyMsg.style.display = activeTasks.length === 0 ? 'block' : 'none';
+                sections[0].style.display = 'flex';
+                sections[1].style.display = 'none';
+                activeList.style.display = 'flex';
+                doneList.style.display = 'none';
+            } else if (currentFilter === 'done') {
+                doneTasks.forEach(t => doneList.appendChild(createTaskElement(t)));
+                emptyMsg.style.display = doneTasks.length === 0 ? 'block' : 'none';
+                sections[0].style.display = 'none';
+                sections[1].style.display = 'flex';
+                activeList.style.display = 'none';
+                doneList.style.display = 'flex';
+            }
+
+            updateStats();
+        }
+
+        // Создание элемента задачи
+        function createTaskElement(task) {
+            const li = document.createElement('li');
+            li.className = `task-item${task.done ? ' done' : ''}`;
+            const overdue = !task.done && isOverdue(task.dateTime) ? ' overdue' : '';
+            li.innerHTML = `
+                        <div class="check-circle" onclick="toggleTask(${task.id})" title="Отметить выполнение"></div>
+                        <div class="task-content">
+                            <div class="task-text">${escapeHtml(task.text)}</div>
+                            <div class="task-time${overdue}">
+                                <span class="time-icon">${overdue ? '⚠️' : '🕐'}</span>
+                                ${formatDateTime(task.dateTime)}
+                            </div>
+                        </div>
+                        <button class="btn-delete" onclick="deleteTask(${task.id})" title="Удалить">✕</button>
+                    `;
+            return li;
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function generateId() {
+            return Date.now() + Math.floor(Math.random() * 10000);
+        }
+
+        function addTask() {
+            const input = document.getElementById('taskInput');
+            const dateInput = document.getElementById('taskDateTime');
+            const text = input.value.trim();
+
+            if (!text) {
+                input.focus();
+                input.style.borderColor = '#ff6b6b';
+                input.style.boxShadow = '0 0 0 4px rgba(255,107,107,0.15)';
+                setTimeout(() => {
+                    input.style.borderColor = '';
+                    input.style.boxShadow = '';
+                }, 1500);
+                return;
+            }
+
+            const newTask = {
+                id: generateId(),
+                text: text,
+                dateTime: dateInput.value || null,
+                done: false,
+                createdAt: Date.now()
+            };
+
+            tasks.push(newTask);
+            saveTasks();
+            render();
+
+            input.value = '';
+            dateInput.value = '';
+            input.focus();
+
+            // Анимация кнопки
+            const btn = document.querySelector('.btn-add');
+            btn.style.animation = 'pulse 0.6s ease';
+            setTimeout(() => btn.style.animation = '', 600);
+        }
+
+        function toggleTask(id) {
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                task.done = !task.done;
+                saveTasks();
+                render();
+            }
+        }
+
+        function deleteTask(id) {
+            const task = tasks.find(t => t.id === id);
+            const taskName = task ? task.text : 'задачу';
+            if (confirm(`Удалить «${taskName}»?`)) {
+                tasks = tasks.filter(t => t.id !== id);
+                saveTasks();
+                render();
+            }
+        }
+
+        function setFilter(filter, btn) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            render();
+        }
+
+        // Enter для добавления
+        document.getElementById('taskInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') addTask();
+        });
+
+        // Инициализация
+        render();
+    </script>
+</body>
+</html>
